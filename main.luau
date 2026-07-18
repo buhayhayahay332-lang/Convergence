@@ -48,10 +48,14 @@ SilentSection:Toggle({
     end,
 })
 
+local safeFOV = type(Silent.Config.FOV) == "number" and Silent.Config.FOV or 90
+if safeFOV < 1 then safeFOV = 90 end
+
 SilentSection:Slider({
     Name     = "FOV",
     Flag     = "SilentFOV",
-    Default  = Silent.Config.FOV,
+    Default  = safeFOV,  
+    Value    = safeFOV,  
     Min      = 1,
     Max      = 360,
     Decimals = 0,
@@ -59,6 +63,7 @@ SilentSection:Slider({
     Callback = function(Value)
         Silent.Config.FOV = Value
     end,
+})nd,
 })
 
 AimAssistSection:Toggle({
