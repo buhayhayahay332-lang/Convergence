@@ -1,20 +1,24 @@
---silent.luau
 local newcclosure   = newcclosure   or function(f) return f end
 local hookfunction  = hookfunction  or function(f, r) return f end
 local clonefunction = clonefunction or function(f) return f end
 local getgc         = getgc         or function() return {} end
 
-local Workspace   = game:GetService("Workspace")
-local Players     = game:GetService("Players")
+local Workspace   = cloneref(game:GetService("Workspace"))
+local Players     = cloneref(game:GetService("Players"))
 local LocalPlayer = Players.LocalPlayer
 
 local Silent = {}
-Silent.ENABLED      = true
-Silent.FOV          = 180
-Silent.hookedParams = {}
-Silent.spawnConn    = nil
 
-function Silent.isTeammate(player)
+Silent.Config = {
+    Enabled = true,
+    FOV     = 180,
+}
+
+local State = {
+    hookedParams = {},
+}
+
+local function isTeammate(player)
     if player == LocalPlayer then return true end
     if LocalPlayer.Team and player.Team then
         return player.Team == LocalPlayer.Team
@@ -22,7 +26,7 @@ function Silent.isTeammate(player)
     return false
 end
 
-function Silent.getNearestEnemyHead()
+local function getNearestEnemyHead()
     local camera      = Workspace.CurrentCamera
     local camPos      = camera.CFrame.Position
     local camLook     = camera.CFrame.LookVector
@@ -30,16 +34,16 @@ function Silent.getNearestEnemyHead()
     local closestDist = math.huge
 
     for _, player in ipairs(Players:GetPlayers()) do
-        if not Silent.isTeammate(player) then
-            local character = player.Character
-            if character then
-                local humanoid = character:FindFirstChildOfClass("Humanoid")
-                local head     = character:FindFirstChild("Head")
-                if head and humanoid and humanoid.Health > 0 then
+        if not isTeammate(player) then
+            local char = player.Character
+            if char then
+                local hum  = char:FindFirstChildOfClass("Humanoid")
+                local head = char:FindFirstChild("Head")
+                if head and hum and hum.Health > 0 then
                     local toHead = head.Position - camPos
                     local dist   = toHead.Magnitude
                     local angle  = math.deg(math.acos(math.clamp(camLook:Dot(toHead.Unit), -1, 1)))
-                    if angle <= Silent.FOV / 2 and dist < closestDist then
+                    if angle <= Silent.Config.FOV / 2 and dist < closestDist then
                         closestDist = dist
                         closest     = head
                     end
@@ -51,7 +55,7 @@ function Silent.getNearestEnemyHead()
     return closest
 end
 
-function Silent.getHitPosParams(func)
+local function getHitPosParams(func)
     local ok1, consts = pcall(debug.getconstants, func)
     if not ok1 or not consts then return nil end
 
@@ -71,21 +75,21 @@ function Silent.getHitPosParams(func)
     return nil
 end
 
-function Silent.scan()
+local function scan()
     local count = 0
     for _, func in ipairs(getgc(true)) do
         if type(func) == "function" then
-            local params = Silent.getHitPosParams(func)
-            if params and not Silent.hookedParams[params] then
-                Silent.hookedParams[params] = true
+            local params = getHitPosParams(func)
+            if params and not State.hookedParams[params] then
+                State.hookedParams[params] = true
                 local original = clonefunction(func)
 
                 hookfunction(func, newcclosure(function(firePoint, shotIndex)
-                    if Silent.ENABLED then
-                        local head = Silent.getNearestEnemyHead()
+                    if Silent.Config.Enabled then
+                        local head = getNearestEnemyHead()
                         if head then
-                            local camPos    = Workspace.CurrentCamera.CFrame.Position
-                            local dirToHead = (head.Position - camPos).Unit
+                            local camPos     = Workspace.CurrentCamera.CFrame.Position
+                            local dirToHead  = (head.Position - camPos).Unit
                             local fakeOrigin = head.Position - dirToHead * 1
                             return fakeOrigin, dirToHead
                         end
@@ -97,29 +101,23 @@ function Silent.scan()
             end
         end
     end
-    print(count)
+    if count > 0 then
+        print(count)
+    end
 end
 
 function Silent.toggle()
-    Silent.ENABLED = not Silent.ENABLED
+    Silent.Config.Enabled = not Silent.Config.Enabled
+    print(Silent.Config.Enabled and "✅ [Silent] ON" or "❌ [Silent] OFF")
 end
 
 function Silent.init()
-    local function onSpawn()
-        Silent.hookedParams = {}
+    task.wait(2)
+    scan()
+
+    Players.LocalPlayer.CharacterAdded:Connect(function()
         task.wait(2)
-        Silent.scan()
-    end
-
-    if LocalPlayer.Character then
-        task.spawn(onSpawn)
-    end
-
-    if Silent.spawnConn then
-        Silent.spawnConn:Disconnect()
-    end
-    Silent.spawnConn = LocalPlayer.CharacterAdded:Connect(function()
-        task.spawn(onSpawn)
+        scan()
     end)
 end
 

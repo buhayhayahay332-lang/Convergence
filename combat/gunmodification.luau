@@ -1,46 +1,49 @@
---gunmodification.luau
-local getgc      = getgc or function() return {} end
-local RunService = cloneref(game:GetService("RunService"))
-local Players    = cloneref(game:GetService("Players"))
+local getgc       = getgc or function() return {} end
+local RunService  = cloneref(game:GetService("RunService"))
+local Players     = cloneref(game:GetService("Players"))
+local LocalPlayer = Players.LocalPlayer
 
 local GunMod = {}
-GunMod.INFINITE_AMMO = true
-GunMod.updateGUIFns  = {}
-GunMod.heartbeatConn = nil
-GunMod.spawnConn     = nil
 
-function GunMod.isUpdateGUI(func)
+GunMod.Config = {
+    InfiniteAmmo = true,
+}
+
+local State = {
+    updateGUIFns  = {},
+    heartbeatConn = nil,
+}
+
+local function isUpdateGUI(func)
     local ok, consts = pcall(debug.getconstants, func)
     if not ok or not consts then return false end
     local hasTween, hasAmmoPerMag = false, false
     for _, c in pairs(consts) do
-        if c == "TweenSizeAndPosition" then hasTween     = true end
+        if c == "TweenSizeAndPosition" then hasTween      = true end
         if c == "AmmoPerMag"           then hasAmmoPerMag = true end
     end
     return hasTween and hasAmmoPerMag
 end
 
-function GunMod.scan()
+local function scan()
     for _, func in ipairs(getgc(true)) do
-        if type(func) == "function" and GunMod.isUpdateGUI(func) then
+        if type(func) == "function" and isUpdateGUI(func) then
             local found = false
-            for _, f in ipairs(GunMod.updateGUIFns) do
+            for _, f in ipairs(State.updateGUIFns) do
                 if f == func then found = true break end
             end
             if not found then
-                table.insert(GunMod.updateGUIFns, func)
+                table.insert(State.updateGUIFns, func)
             end
         end
     end
 end
 
-function GunMod.startHeartbeat()
-    if GunMod.heartbeatConn then
-        GunMod.heartbeatConn:Disconnect()
-    end
-    GunMod.heartbeatConn = RunService.Heartbeat:Connect(function()
-        if not GunMod.INFINITE_AMMO then return end
-        for _, fn in ipairs(GunMod.updateGUIFns) do
+local function startHeartbeat()
+    if State.heartbeatConn then State.heartbeatConn:Disconnect() end
+    State.heartbeatConn = RunService.Heartbeat:Connect(function()
+        if not GunMod.Config.InfiniteAmmo then return end
+        for _, fn in ipairs(State.updateGUIFns) do
             local ok, upvals = pcall(debug.getupvalues, fn)
             if ok and upvals then
                 local config = upvals[3]
@@ -54,35 +57,26 @@ function GunMod.startHeartbeat()
 end
 
 function GunMod.toggleInfiniteAmmo()
-    GunMod.INFINITE_AMMO = not GunMod.INFINITE_AMMO
+    GunMod.Config.InfiniteAmmo = not GunMod.Config.InfiniteAmmo
+end
+
+function GunMod.cleanup()
+    if State.heartbeatConn then
+        State.heartbeatConn:Disconnect()
+        State.heartbeatConn = nil
+    end
 end
 
 function GunMod.init()
-    local LocalPlayer = Players.LocalPlayer
-
-    local function onSpawn()
-        GunMod.updateGUIFns = {}
-        task.wait(2)
-        GunMod.scan()
-        GunMod.startHeartbeat()
-    end
-
-    if LocalPlayer.Character then
-        task.spawn(onSpawn)
-    end
-
-    if GunMod.spawnConn then
-        GunMod.spawnConn:Disconnect()
-    end
-    GunMod.spawnConn = LocalPlayer.CharacterAdded:Connect(function()
-        task.spawn(onSpawn)
-    end)
-end
-
-function GunMod.reinit()
-    GunMod.updateGUIFns = {}
     task.wait(2)
-    GunMod.scan()
+    scan()
+    startHeartbeat()
+
+    LocalPlayer.CharacterAdded:Connect(function()
+        State.updateGUIFns = {}
+        task.wait(2)
+        scan()
+    end)
 end
 
 return GunMod

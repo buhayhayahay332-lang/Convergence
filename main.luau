@@ -51,54 +51,49 @@ local Tabs = {
     ["UI Settings"] = Window:AddTab("UI Settings", "settings"),
 }
 
-
 local AimTabbox = Tabs.Combat:AddLeftTabbox()
 local SilentTab = AimTabbox:AddTab("Silent")
 local AimbotTab = AimTabbox:AddTab("Aimbot")
 
 SilentTab:AddToggle("SilentEnabled", {
-    Text     = "Enable Silent Aim/ Bullet Tp",
-    Default  = Silent.ENABLED,
-    Tooltip  = "tp to enemy head",
+    Text     = "Enable Silent Aim / Bullet TP",
+    Default  = Silent.Config.Enabled,
+    Tooltip  = "Teleports bullet to enemy head, bypasses walls",
     Callback = function(Value)
-        if Value ~= Silent.ENABLED then Silent.toggle() end
+        if Value ~= Silent.Config.Enabled then Silent.toggle() end
     end,
 })
 
 SilentTab:AddSlider("SilentFOV", {
     Text     = "FOV",
-    Default  = Silent.FOV,
+    Default  = Silent.Config.FOV,
     Min      = 1,
     Max      = 360,
     Rounding = 0,
     Suffix   = "°",
-    Tooltip  = "Cone angle not fov circle",
+    Tooltip  = "Cone angle for target detection",
     Callback = function(Value)
-        Silent.FOV = Value
+        Silent.Config.FOV = Value
     end,
 })
 
-SilentTab:AddDivider()
-
 AimbotTab:AddToggle("AimbotEnabled", {
     Text     = "Enable Aimbot",
-    Default  = Aimbot.ENABLED,
-    Tooltip  = "Snaps camera towards the nearest enemy within FOV",
+    Default  = Aimbot.Config.Enabled,
+    Tooltip  = "Snaps camera to nearest enemy within FOV",
     Callback = function(Value)
-        if Value ~= Aimbot.ENABLED then Aimbot.toggle() end
+        if Value ~= Aimbot.Config.Enabled then Aimbot.toggle() end
     end,
 })
 
 AimbotTab:AddDropdown("AimbotKeybindMode", {
-    Values   = { "Hold", "Toggle", "Always" },
-    Default  = Aimbot.KEYBIND_MODE,
+    Values   = { "Hold", "Toggle" },
+    Default  = Aimbot.Config.KeybindMode,
     Text     = "Keybind Mode",
-    Tooltip  = "Hold = aim while key held, Toggle = press to toggle aim, Always = aim whenever enabled",
+    Tooltip  = "Hold = aim while key held | Toggle = press to toggle",
     Callback = function(Value)
-        Aimbot.KEYBIND_MODE = Value
-        if Options.AimbotKeybind then
-            Options.AimbotKeybind:SetMode(Value)
-        end
+        Aimbot.Config.KeybindMode = Value
+        Aimbot.resetActive()
     end,
 })
 
@@ -106,55 +101,61 @@ AimbotTab:AddLabel("Aim Keybind")
     :AddKeyPicker("AimbotKeybind", {
         Default         = "MB2",
         SyncToggleState = false,
-        Mode            = Aimbot.KEYBIND_MODE,
+        Mode            = "Always",
         Text            = "Aim Key",
         NoUI            = false,
+        Callback        = function(Value)
+            Aimbot.Config.Keybind = Value
+        end,
     })
 
-Aimbot.getKeybindPicker = function() return Options.AimbotKeybind end
+Options.AimbotKeybind:OnChanged(function()
+    Aimbot.Config.Keybind = Options.AimbotKeybind.Value
+end)
+Aimbot.Config.Keybind = Options.AimbotKeybind.Value
 
 AimbotTab:AddSlider("AimbotFOV", {
     Text     = "FOV",
-    Default  = Aimbot.FOV,
+    Default  = Aimbot.Config.FOV,
     Min      = 1,
     Max      = 500,
     Rounding = 0,
     Suffix   = "px",
-    Tooltip  = "Screen-space radius (pixels) to look for targets",
+    Tooltip  = "Screen-space radius in pixels",
     Callback = function(Value)
-        Aimbot.FOV = Value
+        Aimbot.Config.FOV = Value
     end,
 })
 
 AimbotTab:AddSlider("AimbotSmoothness", {
     Text     = "Smoothness",
-    Default  = math.floor(Aimbot.SMOOTHNESS * 100),
+    Default  = math.floor(Aimbot.Config.Smoothness * 100),
     Min      = 1,
     Max      = 100,
     Rounding = 0,
     Suffix   = "%",
     Tooltip  = "Higher = snappier, lower = smoother",
     Callback = function(Value)
-        Aimbot.SMOOTHNESS = Value / 100
+        Aimbot.Config.Smoothness = Value / 100
     end,
 })
 
 AimbotTab:AddDropdown("AimbotPart", {
     Values   = { "Head", "UpperTorso", "HumanoidRootPart" },
-    Default  = Aimbot.TARGET_PART,
+    Default  = Aimbot.Config.TargetPart,
     Text     = "Target Part",
     Tooltip  = "Which body part to aim at",
     Callback = function(Value)
-        Aimbot.TARGET_PART = Value
+        Aimbot.Config.TargetPart = Value
     end,
 })
 
 AimbotTab:AddToggle("AimbotTeamCheck", {
     Text     = "Team Check",
-    Default  = Aimbot.TEAM_CHECK,
+    Default  = Aimbot.Config.TeamCheck,
     Tooltip  = "Skip teammates",
     Callback = function(Value)
-        Aimbot.TEAM_CHECK = Value
+        Aimbot.Config.TeamCheck = Value
     end,
 })
 
@@ -162,22 +163,23 @@ local WeaponBox = Tabs.Combat:AddRightGroupbox("Weapons", "zap")
 
 WeaponBox:AddToggle("InfiniteAmmo", {
     Text     = "Infinite Ammo",
-    Default  = GunMod.INFINITE_AMMO,
-    Tooltip  = "inf ammo",
+    Default  = GunMod.Config.InfiniteAmmo,
+    Tooltip  = "Unlimited ammo",
     Callback = function(Value)
-        if Value ~= GunMod.INFINITE_AMMO then GunMod.toggleInfiniteAmmo() end
+        if Value ~= GunMod.Config.InfiniteAmmo then GunMod.toggleInfiniteAmmo() end
     end,
 })
+
 
 local MoveBox = Tabs.Movement:AddLeftGroupbox("Character", "footprints")
 
 MoveBox:AddSlider("WalkSpeed", {
     Text     = "Walk Speed",
-    Default  = Movement.WALKSPEED,
+    Default  = Movement.Config.WalkSpeed,
     Min      = 1,
     Max      = 500,
     Rounding = 0,
-    Tooltip  = "Set character walk speed",
+    Tooltip  = "Character walk speed",
     Callback = function(Value)
         Movement.setWalkSpeed(Value)
     end,
@@ -187,22 +189,22 @@ MoveBox:AddDivider()
 
 MoveBox:AddToggle("FlyEnabled", {
     Text     = "Fly",
-    Default  = Movement.FLY_ENABLED,
-    Tooltip  = "W/A/S/D to move, Space to go up, LCtrl to go down",
+    Default  = Movement.Config.FlyEnabled,
+    Tooltip  = "W/A/S/D to move, Space up, LCtrl down",
     Callback = function(Value)
-        if Value ~= Movement.FLY_ENABLED then Movement.toggleFly() end
+        if Value ~= Movement.Config.FlyEnabled then Movement.toggleFly() end
     end,
 })
 
 MoveBox:AddSlider("FlySpeed", {
     Text     = "Fly Speed",
-    Default  = Movement.FLY_SPEED,
+    Default  = Movement.Config.FlySpeed,
     Min      = 1,
     Max      = 500,
     Rounding = 0,
     Tooltip  = "Speed while flying",
     Callback = function(Value)
-        Movement.FLY_SPEED = Value
+        Movement.Config.FlySpeed = Value
     end,
 })
 
@@ -210,10 +212,10 @@ MoveBox:AddDivider()
 
 MoveBox:AddToggle("NoclipEnabled", {
     Text     = "Phase Through Walls",
-    Default  = Movement.NOCLIP,
-    Tooltip  = "Disables collision on all character parts",
+    Default  = Movement.Config.Noclip,
+    Tooltip  = "Disables collision on character",
     Callback = function(Value)
-        if Value ~= Movement.NOCLIP then Movement.toggleNoclip() end
+        if Value ~= Movement.Config.Noclip then Movement.toggleNoclip() end
     end,
 })
 
@@ -231,13 +233,19 @@ TeleportBox:AddLabel("TP Keybind")
     :AddKeyPicker("TpKeybind", {
         Default         = "None",
         SyncToggleState = false,
-        Mode            = "Always",  
+        Mode            = "Always",
         Text            = "TP Key",
         NoUI            = false,
-        Callback        = function()
-            Movement.tpToNearestEnemy()
+        Callback        = function(Value)
+            Movement.Config.TpKeybind = Value
         end,
     })
+
+Options.TpKeybind:OnChanged(function()
+    Movement.Config.TpKeybind = Options.TpKeybind.Value
+end)
+Movement.Config.TpKeybind = Options.TpKeybind.Value
+
 
 local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("Menu", "wrench")
 
@@ -299,12 +307,10 @@ ThemeManager:ApplyToTab(Tabs["UI Settings"])
 
 SaveManager:LoadAutoloadConfig()
 
+
 Library:OnUnload(function()
-    if GunMod.heartbeatConn then
-        GunMod.heartbeatConn:Disconnect()
-        GunMod.heartbeatConn = nil
-    end
-    Aimbot.cleanup()    
-    Movement.cleanup()  
-    print("ASTRO-CONVERGENCE unloaded.")
+    GunMod.cleanup()
+    Aimbot.cleanup()
+    Movement.cleanup()
+    print("CONVERGENCE unloaded.")
 end)
