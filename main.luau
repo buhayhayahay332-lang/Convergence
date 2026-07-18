@@ -29,13 +29,13 @@ task.spawn(Silent.init)
 task.spawn(AimAssist.init)
 task.spawn(Movement.init)
 
-local Window    = Library:Window({})
-local Watermark = Library:Watermark({ Name = "CONVERGENCE" })
+local Window = Library:Window({})
 
+local Watermark = Library:Watermark({ Name = "CONVERGENCE" })
 
 local CombatPage = Window:Page({ Name = "Combat" })
 
-local AimSubPage       = CombatPage:SubPage({ Name = "Aim" })
+local AimSubPage = CombatPage:SubPage({ Name = "Aim" })
 local SilentSection    = AimSubPage:Section({ Name = "Silent Aim", Side = 1 })
 local AimAssistSection = AimSubPage:Section({ Name = "Aim Assist", Side = 2 })
 
@@ -68,7 +68,7 @@ AimAssistSection:Toggle({
     Callback = function(Value)
         if Value ~= AimAssist.Config.Enabled then AimAssist.toggle() end
     end,
-}):Settings() -- right click the toggle to bind a key for hold/toggle/always
+}):Settings() -- right‑click to bind a key (hold/toggle/always)
 
 AimAssistSection:Dropdown({
     Name     = "Activation",
@@ -157,7 +157,7 @@ AimAssistSection:Toggle({
 })
 
 local WeaponsSubPage = CombatPage:SubPage({ Name = "Weapons" })
-local GunsSection    = WeaponsSubPage:Section({ Name = "Guns", Side = 1 })
+local GunsSection    = WeaponsSubPage:Section({ Name = "Guns" })
 
 GunsSection:Toggle({
     Name     = "Infinite Ammo",
@@ -172,7 +172,7 @@ local MovementPage = Window:Page({ Name = "Movement" })
 
 local CharSubPage     = MovementPage:SubPage({ Name = "Character" })
 local CharSection     = CharSubPage:Section({ Name = "Movement", Side = 1 })
-local TeleportSection = CharSubPage:Section({ Name = "Teleport",  Side = 2 })
+local TeleportSection = MovementPage:SubPage({ Name = "Teleport" }):Section({ Name = "Teleport", Side = 1 })
 
 CharSection:Slider({
     Name     = "Walk Speed",
@@ -230,7 +230,7 @@ TeleportSection:Toggle({
     Callback = function(Value)
         if Value then
             Movement.tpToNearestEnemy()
-            Library.SetFlags["TpKeybindEnabled"](false)
+            Library.SetFlags["TpKeybindEnabled"](false) 
         end
     end,
 }):Settings()
@@ -242,6 +242,7 @@ Library:Notification("CONVERGENCE loaded", 3, Library.Theme["Accent"])
 local OriginalExit = Library.Exit
 Library.Exit = function(Self)
     GunMod.cleanup()
+    Silent.cleanup()
     AimAssist.cleanup()
     Movement.cleanup()
     OriginalExit(Self)
