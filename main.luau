@@ -6,9 +6,15 @@ local function loadFrom(baseUrl, paths)
     return loaded
 end
 
-local Library = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/buhayhayahay332-lang/Libs/refs/heads/main/finobe%20ui/source.lua"
-))()
+local GUI = loadFrom("https://raw.githubusercontent.com/deividcomsono/Obsidian/main/", {
+    Library      = "Library.lua",
+    ThemeManager = "addons/ThemeManager.lua",
+    SaveManager  = "addons/SaveManager.lua",
+})
+
+local Library      = GUI.Library
+local ThemeManager = GUI.ThemeManager
+local SaveManager  = GUI.SaveManager
 
 local M = loadFrom("https://raw.githubusercontent.com/buhayhayahay332-lang/Convergence/main/", {
     GunMod    = "combat/gunmodification.luau",
@@ -27,24 +33,30 @@ task.spawn(Silent.init)
 task.spawn(AimAssist.init)
 task.spawn(Movement.init)
 
-local Window = Library:Window({ name = "CONVERGENCE" })
+local Options = Library.Options
+local Toggles = Library.Toggles
 
-local CombatTab     = Window:Tab({ name = "Combat"      })
-local MovementTab   = Window:Tab({ name = "Movement"    })
-local UISettingsTab = Window:Tab({ name = "UI Settings" })
+local Window = Library:CreateWindow({
+    Title            = "CONVERGENCE",
+    Footer           = "combat suite",
+    NotifySide       = "Right",
+    ShowCustomCursor = true,
+    Center           = true,
+    AutoShow         = true,
+})
 
-CombatTab.OpenTab()  -- auto-open first tab (mirrors AutoShow = true)
+local Tabs = {
+    Combat          = Window:AddTab("Combat",      "crosshair"),
+    Movement        = Window:AddTab("Movement",    "person-standing"),
+    ["UI Settings"] = Window:AddTab("UI Settings", "settings"),
+}
 
-local CombatLeft  = CombatTab:Column()
-local CombatRight = CombatTab:Column()
+local AimTabbox    = Tabs.Combat:AddLeftTabbox()
+local SilentTab    = AimTabbox:AddTab("Silent")
+local AimAssistTab = AimTabbox:AddTab("AimAssist")
 
-local AimTabs      = CombatLeft:MultiSection({ Names = { "Silent", "AimAssist" } })
-local SilentSec    = AimTabs[1]
-local AimAssistSec = AimTabs[2]
-
-SilentSec:Toggle({
-    Name     = "Enable Silent Aim / Bullet TP",
-    Flag     = "SilentEnabled",
+SilentTab:AddToggle("SilentEnabled", {
+    Text     = "Enable Silent Aim / Bullet TP",
     Default  = Silent.Config.Enabled,
     Tooltip  = "Teleports bullet to enemy head, bypasses walls",
     Callback = function(Value)
@@ -52,22 +64,21 @@ SilentSec:Toggle({
     end,
 })
 
-SilentSec:Slider({
-    Name      = "FOV",
-    Flag      = "SilentFOV",
-    Default   = Silent.Config.FOV,
-    Min       = 1,
-    Max       = 360,
-    Intervals = 1,   
-    Suffix    = "°",
-    Callback  = function(Value)
+SilentTab:AddSlider("SilentFOV", {
+    Text     = "FOV",
+    Default  = Silent.Config.FOV,
+    Min      = 1,
+    Max      = 360,
+    Rounding = 0,
+    Suffix   = "°",
+    Tooltip  = "Cone angle for target detection",
+    Callback = function(Value)
         Silent.Config.FOV = Value
     end,
 })
 
-AimAssistSec:Toggle({
-    Name     = "Enable Aim Assist",
-    Flag     = "AimAssistEnabled",
+AimAssistTab:AddToggle("AimAssistEnabled", {
+    Text     = "Enable Aim Assist",
     Default  = AimAssist.Config.Enabled,
     Tooltip  = "Smoothly pulls camera toward nearest enemy",
     Callback = function(Value)
@@ -75,70 +86,65 @@ AimAssistSec:Toggle({
     end,
 })
 
-AimAssistSec:Dropdown({
-    Name     = "Activation",
-    Flag     = "AimAssistActivation",
-    Items    = { "always", "right_mouse", "left_mouse", "either_mouse" },
+AimAssistTab:AddDropdown("AimAssistActivation", {
+    Values   = { "always", "right_mouse", "left_mouse", "either_mouse" },
     Default  = AimAssist.Config.Activation,
+    Text     = "Activation",
+    Tooltip  = "When aim assist is active",
     Callback = function(Value)
         AimAssist.Config.Activation = Value
     end,
 })
 
-AimAssistSec:Dropdown({
-    Name     = "Target Part",
-    Flag     = "AimAssistPart",
-    Items    = { "Head", "UpperTorso", "HumanoidRootPart" },
+AimAssistTab:AddDropdown("AimAssistPart", {
+    Values   = { "Head", "UpperTorso", "HumanoidRootPart" },
     Default  = AimAssist.Config.TargetPart,
+    Text     = "Target Part",
     Callback = function(Value)
         AimAssist.Config.TargetPart = Value
     end,
 })
 
-AimAssistSec:Slider({
-    Name      = "FOV Radius",
-    Flag      = "AimAssistFOV",
-    Default   = AimAssist.Config.FovRadius,
-    Min       = 10,
-    Max       = 500,
-    Intervals = 1,
-    Suffix    = "px",
-    Tooltip   = "Screen-space FOV circle radius",
-    Callback  = function(Value)
+AimAssistTab:AddSlider("AimAssistFOV", {
+    Text     = "FOV Radius",
+    Default  = AimAssist.Config.FovRadius,
+    Min      = 10,
+    Max      = 500,
+    Rounding = 0,
+    Suffix   = "px",
+    Tooltip  = "Screen-space FOV circle radius",
+    Callback = function(Value)
         AimAssist.Config.FovRadius = Value
     end,
 })
 
-AimAssistSec:Slider({
-    Name      = "Smoothness",
-    Flag      = "AimAssistSmoothness",
-    Default   = math.floor(AimAssist.Config.Smoothness * 100),
-    Min       = 1,
-    Max       = 100,
-    Intervals = 1,
-    Suffix    = "%",
-    Tooltip   = "Lower = smoother pull",
-    Callback  = function(Value)
+AimAssistTab:AddSlider("AimAssistSmoothness", {
+    Text     = "Smoothness",
+    Default  = math.floor(AimAssist.Config.Smoothness * 100),
+    Min      = 1,
+    Max      = 100,
+    Rounding = 0,
+    Suffix   = "%",
+    Tooltip  = "Lower = smoother pull",
+    Callback = function(Value)
         AimAssist.Config.Smoothness = Value / 100
     end,
 })
 
-AimAssistSec:Slider({
-    Name      = "Max Distance",
-    Flag      = "AimAssistMaxDist",
-    Default   = AimAssist.Config.MaxDistance,
-    Min       = 100,
-    Max       = 5000,
-    Intervals = 1,
-    Suffix    = " studs",
-    Callback  = function(Value)
+AimAssistTab:AddSlider("AimAssistMaxDist", {
+    Text     = "Max Distance",
+    Default  = AimAssist.Config.MaxDistance,
+    Min      = 100,
+    Max      = 5000,
+    Rounding = 0,
+    Suffix   = " studs",
+    Callback = function(Value)
         AimAssist.Config.MaxDistance = Value
     end,
 })
 
-AimAssistSec:Toggle({
-    Name     = "Team Check",
-    Flag     = "AimAssistTeamCheck",
+AimAssistTab:AddToggle("AimAssistTeamCheck", {
+    Text     = "Team Check",
     Default  = AimAssist.Config.TeamCheck,
     Tooltip  = "Skip teammates",
     Callback = function(Value)
@@ -146,9 +152,8 @@ AimAssistSec:Toggle({
     end,
 })
 
-AimAssistSec:Toggle({
-    Name     = "Visibility Check",
-    Flag     = "AimAssistVisCheck",
+AimAssistTab:AddToggle("AimAssistVisCheck", {
+    Text     = "Visibility Check",
     Default  = AimAssist.Config.VisibilityCheck,
     Tooltip  = "Only target visible enemies",
     Callback = function(Value)
@@ -156,20 +161,18 @@ AimAssistSec:Toggle({
     end,
 })
 
-AimAssistSec:Toggle({
-    Name     = "Show FOV Circle",
-    Flag     = "AimAssistFovVisible",
+AimAssistTab:AddToggle("AimAssistFovVisible", {
+    Text     = "Show FOV Circle",
     Default  = AimAssist.Config.FovEnabled,
     Callback = function(Value)
         AimAssist.Config.FovEnabled = Value
     end,
 })
 
-local WeaponSec = CombatRight:Section({ Name = "Weapons" })
+local WeaponBox = Tabs.Combat:AddRightGroupbox("Weapons", "zap")
 
-WeaponSec:Toggle({
-    Name     = "Infinite Ammo",
-    Flag     = "InfiniteAmmo",
+WeaponBox:AddToggle("InfiniteAmmo", {
+    Text     = "Infinite Ammo",
     Default  = GunMod.Config.InfiniteAmmo,
     Tooltip  = "Unlimited ammo",
     Callback = function(Value)
@@ -177,28 +180,24 @@ WeaponSec:Toggle({
     end,
 })
 
-local MovLeft  = MovementTab:Column()
-local MovRight = MovementTab:Column()
+local MoveBox = Tabs.Movement:AddLeftGroupbox("Character", "footprints")
 
-local CharSec = MovLeft:Section({ Name = "Character" })
-
-CharSec:Slider({
-    Name      = "Walk Speed",
-    Flag      = "WalkSpeed",
-    Default   = Movement.Config.WalkSpeed,
-    Min       = 1,
-    Max       = 500,
-    Intervals = 1,
-    Tooltip   = "Character walk speed",
-    Callback  = function(Value)
+MoveBox:AddSlider("WalkSpeed", {
+    Text     = "Walk Speed",
+    Default  = Movement.Config.WalkSpeed,
+    Min      = 1,
+    Max      = 500,
+    Rounding = 0,
+    Tooltip  = "Character walk speed",
+    Callback = function(Value)
         Movement.setWalkSpeed(Value)
     end,
 })
 
+MoveBox:AddDivider()
 
-CharSec:Toggle({
-    Name     = "Fly",
-    Flag     = "FlyEnabled",
+MoveBox:AddToggle("FlyEnabled", {
+    Text     = "Fly",
     Default  = Movement.Config.FlyEnabled,
     Tooltip  = "W/A/S/D to move, Space up, LCtrl down",
     Callback = function(Value)
@@ -206,22 +205,22 @@ CharSec:Toggle({
     end,
 })
 
-CharSec:Slider({
-    Name      = "Fly Speed",
-    Flag      = "FlySpeed",
-    Default   = Movement.Config.FlySpeed,
-    Min       = 1,
-    Max       = 500,
-    Intervals = 1,
-    Tooltip   = "Speed while flying",
-    Callback  = function(Value)
+MoveBox:AddSlider("FlySpeed", {
+    Text     = "Fly Speed",
+    Default  = Movement.Config.FlySpeed,
+    Min      = 1,
+    Max      = 500,
+    Rounding = 0,
+    Tooltip  = "Speed while flying",
+    Callback = function(Value)
         Movement.Config.FlySpeed = Value
     end,
 })
 
-CharSec:Toggle({
-    Name     = "Phase Through Walls",
-    Flag     = "NoclipEnabled",
+MoveBox:AddDivider()
+
+MoveBox:AddToggle("NoclipEnabled", {
+    Text     = "Phase Through Walls",
     Default  = Movement.Config.Noclip,
     Tooltip  = "Disables collision on character",
     Callback = function(Value)
@@ -229,108 +228,96 @@ CharSec:Toggle({
     end,
 })
 
-local TpSec = MovRight:Section({ Name = "Teleport" })
+local TeleportBox = Tabs.Movement:AddRightGroupbox("Teleport", "map-pin")
 
-TpSec:ButtonHolder({})
-TpSec:Button({
-    name     = "TP to Nearest Enemy",
-    callback = function()
+TeleportBox:AddButton({
+    Text    = "TP to Nearest Enemy",
+    Tooltip = "Teleports you behind the closest enemy",
+    Func    = function()
         Movement.tpToNearestEnemy()
     end,
 })
 
-local TpKbLabel = TpSec:Label({ name = "TP Keybind" })
-TpKbLabel:Keybind({
-    flag     = "TpKeybind",
-    mode     = "toggle",
-    name     = "TP Key",         
-    callback = function(_active)
-        local flagData = Library.Flags["TpKeybind"]
-        if flagData then
-            Movement.Config.TpKeybind = flagData.Key
-        end
-    end,
-})
-Movement.Config.TpKeybind = Library.Flags["TpKeybind"] and Library.Flags["TpKeybind"].Key or nil
+TeleportBox:AddLabel("TP Keybind")
+    :AddKeyPicker("TpKeybind", {
+        Default         = "None",
+        SyncToggleState = false,
+        Mode            = "Always",
+        Text            = "TP Key",
+        NoUI            = false,
+        Callback        = function(Value)
+            Movement.Config.TpKeybind = Value
+        end,
+    })
 
-local UILeft  = UISettingsTab:Column()
-local UIRight = UISettingsTab:Column()
+Options.TpKeybind:OnChanged(function()
+    Movement.Config.TpKeybind = Options.TpKeybind.Value
+end)
+Movement.Config.TpKeybind = Options.TpKeybind.Value
 
-local MenuSec = UILeft:Section({ Name = "Menu" })
+local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("Menu", "wrench")
 
-MenuSec:Toggle({
-    Name     = "Show Keybind List",
-    Flag     = "KeybindMenuOpen",
-    Default  = false,
+MenuGroup:AddToggle("KeybindMenuOpen", {
+    Default  = Library.KeybindFrame.Visible,
+    Text     = "Show Keybind Menu",
     Callback = function(Value)
-        Library.KeybindListFrame.Visible = Value
+        Library.KeybindFrame.Visible = Value
     end,
 })
 
-local MenuKbLabel = MenuSec:Label({ name = "Menu Keybind" })
-MenuKbLabel:Keybind({
-    flag     = "MenuKeybind",
-    key      = Enum.KeyCode.RightShift,
-    mode     = "toggle",
-    default  = true,
-    name     = "Toggle Menu",
-    callback = function(active)
-        Window.SetMenuVisibility(active)
+MenuGroup:AddToggle("ShowCustomCursor", {
+    Text     = "Custom Cursor",
+    Default  = true,
+    Callback = function(Value)
+        Library.ShowCustomCursor = Value
     end,
 })
 
-local ConfigSec = UIRight:Section({ Name = "Config" })
-
-local CONFIG_PATH = "CONVERGENCE/configs/config.json"
-
-ConfigSec:ButtonHolder({})
-ConfigSec:Button({
-    name     = "Save Config",
-    callback = function()
-        if not isfolder("CONVERGENCE/configs") then
-            makefolder("CONVERGENCE/configs")
-        end
-        writefile(CONFIG_PATH, Library:GetConfig())
-        Library:Notification({ text = "Config saved!", time = 3 })
+MenuGroup:AddDropdown("NotificationSide", {
+    Values   = { "Left", "Right" },
+    Default  = "Right",
+    Text     = "Notification Side",
+    Callback = function(Value)
+        Library:SetNotifySide(Value)
     end,
 })
 
-ConfigSec:ButtonHolder({})
-ConfigSec:Button({
-    name     = "Load Config",
-    callback = function()
-        if isfile(CONFIG_PATH) then
-            Library:LoadConfig(readfile(CONFIG_PATH))
-            Library:Notification({ text = "Config loaded!", time = 3 })
-        else
-            Library:Notification({ text = "No config found.", time = 3 })
-        end
+MenuGroup:AddDivider()
+
+MenuGroup:AddLabel("Menu Keybind")
+    :AddKeyPicker("MenuKeybind", {
+        Default = "RightShift",
+        NoUI    = true,
+        Text    = "Toggle menu",
+    })
+
+MenuGroup:AddButton({
+    Text = "Unload",
+    Func = function()
+        Library:Unload()
     end,
 })
 
-ConfigSec:ButtonHolder({})
-ConfigSec:Button({
-    name     = "Unload",
-    callback = function()
-        GunMod.cleanup()
-        Silent.cleanup()
-        AimAssist.cleanup()
-        Movement.cleanup()
-        for _, conn in next, Library.Connections do
-            pcall(function() conn:Disconnect() end)
-        end
-        for _, gui in next, Library.Guis do
-            pcall(function() gui:Destroy() end)
-        end
-        for _, drawing in next, Library.Drawings do
-            pcall(function() drawing:Remove() end)
-        end
-        print("CONVERGENCE unloaded.")
-    end,
-})
+Library.ToggleKeybind = Options.MenuKeybind
 
-task.spawn(function()
-    if isfile(CONFIG_PATH) then
-        Library:LoadConfig(readfile(CONFIG_PATH))
-    end
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
+
+ThemeManager:SetFolder("CONVERGENCE")
+SaveManager:SetFolder("ASTRO/configs")
+
+SaveManager:BuildConfigSection(Tabs["UI Settings"])
+ThemeManager:ApplyToTab(Tabs["UI Settings"])
+
+SaveManager:LoadAutoloadConfig()
+
+Library:OnUnload(function()
+    GunMod.cleanup()
+    Silent.cleanup()
+    AimAssist.cleanup()
+    Movement.cleanup()
+    print("CONVERGENCE unloaded.")
 end)
