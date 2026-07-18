@@ -13,8 +13,6 @@ Movement.NOCLIP      = false
 Movement.spawnConn   = nil
 Movement.renderConn  = nil
 Movement.noclipConn  = nil
-Movement.TP_KEYBIND  = nil
-Movement.tpInputConn = nil
 
 local function getChar()     return LocalPlayer.Character end
 local function getHRP()
@@ -32,7 +30,7 @@ function Movement.setWalkSpeed(speed)
     if hum then hum.WalkSpeed = speed end
 end
 
-local bv, bg 
+local bv, bg
 
 local function cleanFlyObjects()
     if bv and bv.Parent then bv:Destroy() end
@@ -144,28 +142,19 @@ function Movement.tpToNearestEnemy()
 
     if closest then
         hrp.CFrame = closest.CFrame + closest.CFrame.LookVector * 2
-    else
     end
+end
+
+function Movement.onTpKeybind()
+    Movement.tpToNearestEnemy()
 end
 
 local function onSpawn()
     task.wait(0.5)
     local hum = getHumanoid()
     if hum then hum.WalkSpeed = Movement.WALKSPEED end
-    if Movement.FLY_ENABLED then Movement.startFly()   end
+    if Movement.FLY_ENABLED then Movement.startFly()    end
     if Movement.NOCLIP      then Movement.startNoclip() end
-end
-
-function Movement.startTpKeybind()
-    if Movement.tpInputConn then Movement.tpInputConn:Disconnect() end
-    Movement.tpInputConn = UserInputService.InputBegan:Connect(function(input, _processed)
-        local kb = Movement.TP_KEYBIND
-        if not kb or kb == "None" then return end
-        local match = (input.KeyCode == kb) or (input.UserInputType == kb)
-        if match then
-            Movement.tpToNearestEnemy()
-        end
-    end)
 end
 
 function Movement.cleanup()
@@ -175,10 +164,6 @@ function Movement.cleanup()
         Movement.spawnConn:Disconnect()
         Movement.spawnConn = nil
     end
-    if Movement.tpInputConn then
-        Movement.tpInputConn:Disconnect()
-        Movement.tpInputConn = nil
-    end
 end
 
 function Movement.init()
@@ -187,7 +172,6 @@ function Movement.init()
     Movement.spawnConn = LocalPlayer.CharacterAdded:Connect(function()
         task.spawn(onSpawn)
     end)
-    Movement.startTpKeybind()
 end
 
-return Movement  
+return Movement

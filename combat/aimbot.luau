@@ -1,3 +1,4 @@
+--aimbot.luau
 local Players          = cloneref(game:GetService("Players"))
 local RunService       = cloneref(game:GetService("RunService"))
 local UserInputService = cloneref(game:GetService("UserInputService"))
@@ -11,12 +12,11 @@ Aimbot.SMOOTHNESS  = 0.15
 Aimbot.TARGET_PART = "Head"
 Aimbot.TEAM_CHECK  = false
 Aimbot.renderConn  = nil
-Aimbot.inputConn   = nil
-Aimbot.inputEndConn = nil
 
-Aimbot.KEYBIND      = nil 
-Aimbot.KEYBIND_MODE = "Hold"               
-Aimbot.ACTIVE       = false                
+Aimbot.KEYBIND_MODE = "Hold"
+Aimbot.ACTIVE       = false   
+
+Aimbot.getKeybindPicker = nil
 
 local fovCircle = Drawing.new("Circle")
 fovCircle.Visible      = false
@@ -73,48 +73,17 @@ function Aimbot.getNearestTarget()
     return closest
 end
 
-local function isKeybindHeld()
-    local kb = Aimbot.KEYBIND
-    if not kb or typeof(kb) ~= "EnumItem" then return false end
-
-    if kb.EnumType == Enum.KeyCode then
-        return UserInputService:IsKeyDown(kb)
-    elseif kb.EnumType == Enum.UserInputType then
-        return UserInputService:IsMouseButtonPressed(kb)
+local function shouldAimNow()
+    if Aimbot.KEYBIND_MODE == "Always" then
+        return true
     end
 
-    return false
-end
+    local picker = Aimbot.getKeybindPicker and Aimbot.getKeybindPicker()
+    if not picker then
+        return Aimbot.ACTIVE
+    end
 
-function Aimbot.startInput()
-    if Aimbot.inputConn then Aimbot.inputConn:Disconnect() end
-    if Aimbot.inputEndConn then Aimbot.inputEndConn:Disconnect() end
-
-    Aimbot.inputConn = UserInputService.InputBegan:Connect(function(input, _processed)
-        if not Aimbot.ENABLED then return end
-        local kb = Aimbot.KEYBIND
-        if not kb then return end
-
-        local match = (input.KeyCode == kb) or (input.UserInputType == kb)
-        if not match then return end
-
-        if Aimbot.KEYBIND_MODE == "Toggle" then
-            Aimbot.ACTIVE = not Aimbot.ACTIVE
-        else
-            Aimbot.ACTIVE = true
-        end
-    end)
-
-    Aimbot.inputEndConn = UserInputService.InputEnded:Connect(function(input)
-        if Aimbot.KEYBIND_MODE ~= "Hold" then return end
-        local kb = Aimbot.KEYBIND
-        if not kb then return end
-
-        local match = (input.KeyCode == kb) or (input.UserInputType == kb)
-        if match then
-            Aimbot.ACTIVE = false
-        end
-    end)
+    return picker.Toggled == true
 end
 
 function Aimbot.startRender()
@@ -125,21 +94,13 @@ function Aimbot.startRender()
 
         if not Aimbot.ENABLED then
             fovCircle.Visible = false
-            Aimbot.ACTIVE = false
             return
         end
 
         fovCircle.Visible = true
 
-        local shouldAim
-        if Aimbot.KEYBIND_MODE == "Hold" then
-            shouldAim = isKeybindHeld()
-        else
-            shouldAim = Aimbot.ACTIVE
-        end
-
         local camera = workspace.CurrentCamera
-        local target = shouldAim and Aimbot.getNearestTarget() or nil
+        local target = shouldAimNow() and Aimbot.getNearestTarget() or nil
 
         if target then
             fovCircle.Color = Color3.fromRGB(255, 80, 80)
@@ -154,21 +115,17 @@ end
 function Aimbot.toggle()
     Aimbot.ENABLED = not Aimbot.ENABLED
     if not Aimbot.ENABLED then
-        Aimbot.ACTIVE = false
         fovCircle.Visible = false
     end
 end
 
 function Aimbot.cleanup()
-    if Aimbot.renderConn   then Aimbot.renderConn:Disconnect()   end
-    if Aimbot.inputConn    then Aimbot.inputConn:Disconnect()    end
-    if Aimbot.inputEndConn then Aimbot.inputEndConn:Disconnect() end
+    if Aimbot.renderConn then Aimbot.renderConn:Disconnect() end
     fovCircle:Remove()
 end
 
 function Aimbot.init()
     Aimbot.startRender()
-    Aimbot.startInput()
 end
 
 return Aimbot

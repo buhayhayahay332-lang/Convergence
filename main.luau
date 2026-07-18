@@ -90,29 +90,28 @@ AimbotTab:AddToggle("AimbotEnabled", {
 })
 
 AimbotTab:AddDropdown("AimbotKeybindMode", {
-    Values   = { "Hold", "Toggle" },
+    Values   = { "Hold", "Toggle", "Always" },
     Default  = Aimbot.KEYBIND_MODE,
     Text     = "Keybind Mode",
-    Tooltip  = "Hold = aim while key held, Toggle = press to toggle aim",
+    Tooltip  = "Hold = aim while key held, Toggle = press to toggle aim, Always = aim whenever enabled",
     Callback = function(Value)
         Aimbot.KEYBIND_MODE = Value
-        Aimbot.ACTIVE = false 
+        if Options.AimbotKeybind then
+            Options.AimbotKeybind:SetMode(Value)
+        end
     end,
 })
 
 AimbotTab:AddLabel("Aim Keybind")
     :AddKeyPicker("AimbotKeybind", {
-        Default      = "MB2",     
+        Default         = "MB2",
         SyncToggleState = false,
-        Mode         = "Always",  
-        Text         = "Aim Key",
-        NoUI         = false,
+        Mode            = Aimbot.KEYBIND_MODE,
+        Text            = "Aim Key",
+        NoUI            = false,
     })
 
-Options.AimbotKeybind:OnChanged(function()
-    Aimbot.KEYBIND = Options.AimbotKeybind.Value
-end)
-Aimbot.KEYBIND = Options.AimbotKeybind.Value 
+Aimbot.getKeybindPicker = function() return Options.AimbotKeybind end
 
 AimbotTab:AddSlider("AimbotFOV", {
     Text     = "FOV",
@@ -232,15 +231,13 @@ TeleportBox:AddLabel("TP Keybind")
     :AddKeyPicker("TpKeybind", {
         Default         = "None",
         SyncToggleState = false,
-        Mode            = "Always",
+        Mode            = "Always",  
         Text            = "TP Key",
         NoUI            = false,
+        Callback        = function()
+            Movement.tpToNearestEnemy()
+        end,
     })
-
-Options.TpKeybind:OnChanged(function()
-    Movement.TP_KEYBIND = Options.TpKeybind.Value
-end)
-Movement.TP_KEYBIND = Options.TpKeybind.Value 
 
 local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("Menu", "wrench")
 
