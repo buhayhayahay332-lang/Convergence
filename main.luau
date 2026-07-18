@@ -101,6 +101,33 @@ Toggles.AimbotEnabled:OnChanged(function()
     end
 end)
 
+AimbotTab:AddDropdown("AimbotKeybindMode", {
+    Values   = { "Hold", "Toggle" },
+    Default  = Aimbot.KEYBIND_MODE,
+    Text     = "Keybind Mode",
+    Tooltip  = "Hold = aim while key held, Toggle = press to toggle aim",
+    Callback = function(Value)
+        Aimbot.KEYBIND_MODE = Value
+        Aimbot.ACTIVE = false 
+    end,
+})
+
+AimbotTab:AddLabel("Aim Keybind")
+    :AddKeyPicker("AimbotKeybind", {
+        Default      = "MB2",     
+        SyncToggleState = false,
+        Mode         = "Always",  
+        Text         = "Aim Key",
+        NoUI         = false,
+        Callback     = function(Value)
+            Aimbot.KEYBIND = Value
+        end,
+    })
+
+Options.AimbotKeybind:OnChanged(function()
+    Aimbot.KEYBIND = Options.AimbotKeybind.Value
+end)
+
 AimbotTab:AddSlider("AimbotFOV", {
     Text     = "FOV",
     Default  = Aimbot.FOV,
