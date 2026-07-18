@@ -127,6 +127,7 @@ AimbotTab:AddLabel("Aim Keybind")
 Options.AimbotKeybind:OnChanged(function()
     Aimbot.KEYBIND = Options.AimbotKeybind.Value
 end)
+Aimbot.KEYBIND = Options.AimbotKeybind.Value 
 
 AimbotTab:AddSlider("AimbotFOV", {
     Text     = "FOV",
@@ -276,6 +277,7 @@ TeleportBox:AddLabel("TP Keybind")
 Options.TpKeybind:OnChanged(function()
     Movement.TP_KEYBIND = Options.TpKeybind.Value
 end)
+Movement.TP_KEYBIND = Options.TpKeybind.Value 
 
 local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("Menu", "wrench")
 

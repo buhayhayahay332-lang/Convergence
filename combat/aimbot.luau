@@ -14,7 +14,7 @@ Aimbot.renderConn  = nil
 Aimbot.inputConn   = nil
 Aimbot.inputEndConn = nil
 
-Aimbot.KEYBIND      = Enum.KeyCode.Unknown 
+Aimbot.KEYBIND      = nil 
 Aimbot.KEYBIND_MODE = "Hold"               
 Aimbot.ACTIVE       = false                
 
@@ -138,9 +138,12 @@ function Aimbot.startRender()
 
         fovCircle.Visible = true
 
-        local shouldAim = Aimbot.KEYBIND_MODE == "Hold"
-            and isKeybindHeld()
-            or Aimbot.ACTIVE
+        local shouldAim
+        if Aimbot.KEYBIND_MODE == "Hold" then
+            shouldAim = isKeybindHeld()
+        else
+            shouldAim = Aimbot.ACTIVE
+        end
 
         local camera = workspace.CurrentCamera
         local target = shouldAim and Aimbot.getNearestTarget() or nil
