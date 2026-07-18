@@ -261,6 +261,21 @@ TeleportBox:AddButton({
     end,
 })
 
+TeleportBox:AddLabel("TP Keybind")
+    :AddKeyPicker("TpKeybind", {
+        Default         = "None",
+        SyncToggleState = false,
+        Mode            = "Always",
+        Text            = "TP Key",
+        NoUI            = false,
+        Callback        = function(Value)
+            Movement.TP_KEYBIND = Value
+        end,
+    })
+
+Options.TpKeybind:OnChanged(function()
+    Movement.TP_KEYBIND = Options.TpKeybind.Value
+end)
 
 local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("Menu", "wrench")
 
@@ -327,10 +342,7 @@ Library:OnUnload(function()
         GunMod.heartbeatConn:Disconnect()
         GunMod.heartbeatConn = nil
     end
-    if Aimbot.renderConn then
-        Aimbot.renderConn:Disconnect()
-        Aimbot.renderConn = nil
-    end
-    Movement.cleanup()
+    Aimbot.cleanup()    
+    Movement.cleanup()  
     print("ASTRO-CONVERGENCE unloaded.")
 end)

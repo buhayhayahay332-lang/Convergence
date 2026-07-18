@@ -13,6 +13,8 @@ Movement.NOCLIP      = false
 Movement.spawnConn   = nil
 Movement.renderConn  = nil
 Movement.noclipConn  = nil
+Movement.TP_KEYBIND  = nil
+Movement.tpInputConn = nil
 
 local function getChar()     return LocalPlayer.Character end
 local function getHRP()
@@ -90,7 +92,6 @@ end
 function Movement.toggleFly()
     Movement.FLY_ENABLED = not Movement.FLY_ENABLED
     if Movement.FLY_ENABLED then Movement.startFly() else Movement.stopFly() end
-    print(Movement.FLY_ENABLED and "✅ [Movement] Fly: ON" or "❌ [Movement] Fly: OFF")
 end
 
 function Movement.startNoclip()
@@ -117,7 +118,6 @@ end
 function Movement.toggleNoclip()
     Movement.NOCLIP = not Movement.NOCLIP
     if Movement.NOCLIP then Movement.startNoclip() else Movement.stopNoclip() end
-    print(Movement.NOCLIP and "✅ [Movement] Noclip: ON" or "❌ [Movement] Noclip: OFF")
 end
 
 function Movement.tpToNearestEnemy()
@@ -156,12 +156,16 @@ local function onSpawn()
     if Movement.NOCLIP      then Movement.startNoclip() end
 end
 
-function Movement.init()
-    if LocalPlayer.Character then task.spawn(onSpawn) end
-
-    if Movement.spawnConn then Movement.spawnConn:Disconnect() end
-    Movement.spawnConn = LocalPlayer.CharacterAdded:Connect(function()
-        task.spawn(onSpawn)
+function Movement.startTpKeybind()
+    if Movement.tpInputConn then Movement.tpInputConn:Disconnect() end
+    Movement.tpInputConn = UserInputService.InputBegan:Connect(function(input, processed)
+        if processed then return end
+        local kb = Movement.TP_KEYBIND
+        if not kb then return end
+        local match = (input.KeyCode == kb) or (input.UserInputType == kb)
+        if match then
+            Movement.tpToNearestEnemy()
+        end
     end)
 end
 
@@ -172,6 +176,19 @@ function Movement.cleanup()
         Movement.spawnConn:Disconnect()
         Movement.spawnConn = nil
     end
+    if Movement.tpInputConn then
+        Movement.tpInputConn:Disconnect()
+        Movement.tpInputConn = nil
+    end
 end
 
-return Movement
+function Movement.init()
+    if LocalPlayer.Character then task.spawn(onSpawn) end
+    if Movement.spawnConn then Movement.spawnConn:Disconnect() end
+    Movement.spawnConn = LocalPlayer.CharacterAdded:Connect(function()
+        task.spawn(onSpawn)
+    end)
+    Movement.startTpKeybind()
+end
+
+return Movement  
