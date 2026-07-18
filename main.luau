@@ -17,20 +17,20 @@ local ThemeManager = GUI.ThemeManager
 local SaveManager  = GUI.SaveManager
 
 local M = loadFrom("https://raw.githubusercontent.com/buhayhayahay332-lang/Convergence/main/", {
-    GunMod   = "combat/gunmodification.luau",
-    Silent   = "combat/silent.luau",
-    Aimbot   = "combat/aimbot.luau",
-    Movement = "localplayer/movement.luau",
+    GunMod    = "combat/gunmodification.luau",
+    Silent    = "combat/silent.luau",
+    AimAssist = "combat/aimassist.luau",
+    Movement  = "localplayer/movement.luau",
 })
 
-local GunMod   = M.GunMod
-local Silent   = M.Silent
-local Aimbot   = M.Aimbot
-local Movement = M.Movement
+local GunMod    = M.GunMod
+local Silent    = M.Silent
+local AimAssist = M.AimAssist
+local Movement  = M.Movement
 
 task.spawn(GunMod.init)
 task.spawn(Silent.init)
-task.spawn(Aimbot.init)
+task.spawn(AimAssist.init)
 task.spawn(Movement.init)
 
 local Options = Library.Options
@@ -51,9 +51,9 @@ local Tabs = {
     ["UI Settings"] = Window:AddTab("UI Settings", "settings"),
 }
 
-local AimTabbox = Tabs.Combat:AddLeftTabbox()
-local SilentTab = AimTabbox:AddTab("Silent")
-local AimbotTab = AimTabbox:AddTab("Aimbot")
+local AimTabbox    = Tabs.Combat:AddLeftTabbox()
+local SilentTab    = AimTabbox:AddTab("Silent")
+local AimAssistTab = AimTabbox:AddTab("AimAssist")
 
 SilentTab:AddToggle("SilentEnabled", {
     Text     = "Enable Silent Aim / Bullet TP",
@@ -77,85 +77,95 @@ SilentTab:AddSlider("SilentFOV", {
     end,
 })
 
-AimbotTab:AddToggle("AimbotEnabled", {
-    Text     = "Enable Aimbot",
-    Default  = Aimbot.Config.Enabled,
-    Tooltip  = "Snaps camera to nearest enemy within FOV",
+AimAssistTab:AddToggle("AimAssistEnabled", {
+    Text     = "Enable Aim Assist",
+    Default  = AimAssist.Config.Enabled,
+    Tooltip  = "Smoothly pulls camera toward nearest enemy",
     Callback = function(Value)
-        if Value ~= Aimbot.Config.Enabled then Aimbot.toggle() end
+        if Value ~= AimAssist.Config.Enabled then AimAssist.toggle() end
     end,
 })
 
-AimbotTab:AddDropdown("AimbotKeybindMode", {
-    Values   = { "Hold", "Toggle" },
-    Default  = Aimbot.Config.KeybindMode,
-    Text     = "Keybind Mode",
-    Tooltip  = "Hold = aim while key held | Toggle = press to toggle",
+AimAssistTab:AddDropdown("AimAssistActivation", {
+    Values   = { "always", "right_mouse", "left_mouse", "either_mouse" },
+    Default  = AimAssist.Config.Activation,
+    Text     = "Activation",
+    Tooltip  = "When aim assist is active",
     Callback = function(Value)
-        Aimbot.Config.KeybindMode = Value
-        Aimbot.resetActive()
+        AimAssist.Config.Activation = Value
     end,
 })
 
-AimbotTab:AddLabel("Aim Keybind")
-    :AddKeyPicker("AimbotKeybind", {
-        Default         = "MB2",
-        SyncToggleState = false,
-        Mode            = "Always",
-        Text            = "Aim Key",
-        NoUI            = false,
-        Callback        = function(Value)
-            Aimbot.Config.Keybind = Value
-        end,
-    })
+AimAssistTab:AddDropdown("AimAssistPart", {
+    Values   = { "Head", "UpperTorso", "HumanoidRootPart" },
+    Default  = AimAssist.Config.TargetPart,
+    Text     = "Target Part",
+    Callback = function(Value)
+        AimAssist.Config.TargetPart = Value
+    end,
+})
 
-Options.AimbotKeybind:OnChanged(function()
-    Aimbot.Config.Keybind = Options.AimbotKeybind.Value
-end)
-Aimbot.Config.Keybind = Options.AimbotKeybind.Value
-
-AimbotTab:AddSlider("AimbotFOV", {
-    Text     = "FOV",
-    Default  = Aimbot.Config.FOV,
-    Min      = 1,
+AimAssistTab:AddSlider("AimAssistFOV", {
+    Text     = "FOV Radius",
+    Default  = AimAssist.Config.FovRadius,
+    Min      = 10,
     Max      = 500,
     Rounding = 0,
     Suffix   = "px",
-    Tooltip  = "Screen-space radius in pixels",
+    Tooltip  = "Screen-space FOV circle radius",
     Callback = function(Value)
-        Aimbot.Config.FOV = Value
+        AimAssist.Config.FovRadius = Value
     end,
 })
 
-AimbotTab:AddSlider("AimbotSmoothness", {
+AimAssistTab:AddSlider("AimAssistSmoothness", {
     Text     = "Smoothness",
-    Default  = math.floor(Aimbot.Config.Smoothness * 100),
+    Default  = math.floor(AimAssist.Config.Smoothness * 100),
     Min      = 1,
     Max      = 100,
     Rounding = 0,
     Suffix   = "%",
-    Tooltip  = "Higher = snappier, lower = smoother",
+    Tooltip  = "Lower = smoother pull",
     Callback = function(Value)
-        Aimbot.Config.Smoothness = Value / 100
+        AimAssist.Config.Smoothness = Value / 100
     end,
 })
 
-AimbotTab:AddDropdown("AimbotPart", {
-    Values   = { "Head", "UpperTorso", "HumanoidRootPart" },
-    Default  = Aimbot.Config.TargetPart,
-    Text     = "Target Part",
-    Tooltip  = "Which body part to aim at",
+AimAssistTab:AddSlider("AimAssistMaxDist", {
+    Text     = "Max Distance",
+    Default  = AimAssist.Config.MaxDistance,
+    Min      = 100,
+    Max      = 5000,
+    Rounding = 0,
+    Suffix   = " studs",
     Callback = function(Value)
-        Aimbot.Config.TargetPart = Value
+        AimAssist.Config.MaxDistance = Value
     end,
 })
 
-AimbotTab:AddToggle("AimbotTeamCheck", {
+AimAssistTab:AddToggle("AimAssistTeamCheck", {
     Text     = "Team Check",
-    Default  = Aimbot.Config.TeamCheck,
+    Default  = AimAssist.Config.TeamCheck,
     Tooltip  = "Skip teammates",
     Callback = function(Value)
-        Aimbot.Config.TeamCheck = Value
+        AimAssist.Config.TeamCheck = Value
+    end,
+})
+
+AimAssistTab:AddToggle("AimAssistVisCheck", {
+    Text     = "Visibility Check",
+    Default  = AimAssist.Config.VisibilityCheck,
+    Tooltip  = "Only target visible enemies",
+    Callback = function(Value)
+        AimAssist.Config.VisibilityCheck = Value
+    end,
+})
+
+AimAssistTab:AddToggle("AimAssistFovVisible", {
+    Text     = "Show FOV Circle",
+    Default  = AimAssist.Config.FovEnabled,
+    Callback = function(Value)
+        AimAssist.Config.FovEnabled = Value
     end,
 })
 
@@ -169,7 +179,6 @@ WeaponBox:AddToggle("InfiniteAmmo", {
         if Value ~= GunMod.Config.InfiniteAmmo then GunMod.toggleInfiniteAmmo() end
     end,
 })
-
 
 local MoveBox = Tabs.Movement:AddLeftGroupbox("Character", "footprints")
 
@@ -246,7 +255,6 @@ Options.TpKeybind:OnChanged(function()
 end)
 Movement.Config.TpKeybind = Options.TpKeybind.Value
 
-
 local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("Menu", "wrench")
 
 MenuGroup:AddToggle("KeybindMenuOpen", {
@@ -292,7 +300,6 @@ MenuGroup:AddButton({
 
 Library.ToggleKeybind = Options.MenuKeybind
 
-
 ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
 
@@ -307,10 +314,10 @@ ThemeManager:ApplyToTab(Tabs["UI Settings"])
 
 SaveManager:LoadAutoloadConfig()
 
-
 Library:OnUnload(function()
     GunMod.cleanup()
-    Aimbot.cleanup()
+    Silent.cleanup()
+    AimAssist.cleanup()
     Movement.cleanup()
     print("CONVERGENCE unloaded.")
 end)
