@@ -158,8 +158,7 @@ end
 
 function Movement.startTpKeybind()
     if Movement.tpInputConn then Movement.tpInputConn:Disconnect() end
-    Movement.tpInputConn = UserInputService.InputBegan:Connect(function(input, processed)
-        if processed then return end
+    Movement.tpInputConn = UserInputService.InputBegan:Connect(function(input, _processed)
         local kb = Movement.TP_KEYBIND
         if not kb or kb == "None" then return end
         local match = (input.KeyCode == kb) or (input.UserInputType == kb)

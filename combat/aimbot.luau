@@ -90,8 +90,7 @@ function Aimbot.startInput()
     if Aimbot.inputConn then Aimbot.inputConn:Disconnect() end
     if Aimbot.inputEndConn then Aimbot.inputEndConn:Disconnect() end
 
-    Aimbot.inputConn = UserInputService.InputBegan:Connect(function(input, processed)
-        if processed then return end
+    Aimbot.inputConn = UserInputService.InputBegan:Connect(function(input, _processed)
         if not Aimbot.ENABLED then return end
         local kb = Aimbot.KEYBIND
         if not kb then return end
