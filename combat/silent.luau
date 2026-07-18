@@ -9,9 +9,10 @@ local Players     = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 local Silent = {}
-Silent.ENABLED      = false
+Silent.ENABLED      = true
 Silent.FOV          = 180
 Silent.hookedParams = {}
+Silent.spawnConn    = nil
 
 function Silent.isTeammate(player)
     if player == LocalPlayer then return true end
@@ -104,8 +105,22 @@ function Silent.toggle()
 end
 
 function Silent.init()
-    task.wait(2)
-    Silent.scan()
+    local function onSpawn()
+        Silent.hookedParams = {}
+        task.wait(2)
+        Silent.scan()
+    end
+
+    if LocalPlayer.Character then
+        task.spawn(onSpawn)
+    end
+
+    if Silent.spawnConn then
+        Silent.spawnConn:Disconnect()
+    end
+    Silent.spawnConn = LocalPlayer.CharacterAdded:Connect(function()
+        task.spawn(onSpawn)
+    end)
 end
 
 return Silent

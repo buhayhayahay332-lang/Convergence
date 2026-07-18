@@ -1,11 +1,13 @@
 --gunmodification.luau
 local getgc      = getgc or function() return {} end
-local RunService = game:GetService("RunService")
+local RunService = cloneref(game:GetService("RunService"))
+local Players    = cloneref(game:GetService("Players"))
 
 local GunMod = {}
-GunMod.INFINITE_AMMO = false
+GunMod.INFINITE_AMMO = true
 GunMod.updateGUIFns  = {}
 GunMod.heartbeatConn = nil
+GunMod.spawnConn     = nil
 
 function GunMod.isUpdateGUI(func)
     local ok, consts = pcall(debug.getconstants, func)
@@ -30,7 +32,6 @@ function GunMod.scan()
             end
         end
     end
-    print("[GunMod] Found")
 end
 
 function GunMod.startHeartbeat()
@@ -57,9 +58,25 @@ function GunMod.toggleInfiniteAmmo()
 end
 
 function GunMod.init()
-    task.wait(2)
-    GunMod.scan()
-    GunMod.startHeartbeat()
+    local LocalPlayer = Players.LocalPlayer
+
+    local function onSpawn()
+        GunMod.updateGUIFns = {}
+        task.wait(2)
+        GunMod.scan()
+        GunMod.startHeartbeat()
+    end
+
+    if LocalPlayer.Character then
+        task.spawn(onSpawn)
+    end
+
+    if GunMod.spawnConn then
+        GunMod.spawnConn:Disconnect()
+    end
+    GunMod.spawnConn = LocalPlayer.CharacterAdded:Connect(function()
+        task.spawn(onSpawn)
+    end)
 end
 
 function GunMod.reinit()

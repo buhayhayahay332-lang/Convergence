@@ -51,7 +51,7 @@ local AimBox = Tabs.Combat:AddLeftGroupbox("Silent Aim", "target")
 AimBox:AddToggle("SilentEnabled", {
     Text     = "Enable Silent Aim",
     Default  = Silent.ENABLED,
-    Tooltip  = "Silent/Thruwalls",
+    Tooltip  = "BULLET TPw",
     Callback = function(Value)
         if Value ~= Silent.ENABLED then
             Silent.toggle()
@@ -72,7 +72,7 @@ AimBox:AddSlider("SilentFOV", {
     Max      = 360,
     Rounding = 0,
     Suffix   = "°",
-    Tooltip  = "Cone angle (degrees) not FOV Circles",
+    Tooltip  = "Cone ANGLE (degrees) not CIRCLE",
     Callback = function(Value)
         Silent.FOV = Value
     end,
@@ -81,8 +81,8 @@ AimBox:AddSlider("SilentFOV", {
 AimBox:AddDivider()
 
 AimBox:AddButton({
-    Text    = "Re-Hook",
-    Tooltip = "use after round reset",
+    Text    = "Re-scan Hooks",
+    Tooltip = "Re-Hook",
     Func    = function()
         task.spawn(Silent.init)
         Library:Notify({
@@ -98,7 +98,7 @@ local WeaponBox = Tabs.Combat:AddRightGroupbox("Weapons", "zap")
 WeaponBox:AddToggle("InfiniteAmmo", {
     Text     = "Infinite Ammo",
     Default  = GunMod.INFINITE_AMMO,
-    Tooltip  = "Self Explenatory",
+    Tooltip  = "Self Explanatory",
     Callback = function(Value)
         if Value ~= GunMod.INFINITE_AMMO then
             GunMod.toggleInfiniteAmmo()
@@ -115,13 +115,13 @@ end)
 WeaponBox:AddDivider()
 
 WeaponBox:AddButton({
-    Text    = "Re-scan ammo",
-    Tooltip = "use after picking up a new gun",
+    Text    = "Re-scan",
+    Tooltip = "Re-scan ammo",
     Func    = function()
         task.spawn(GunMod.reinit)
         Library:Notify({
             Title       = "Weapons",
-            Description = "Re-scanning",
+            Description = "re-scanning...",
             Time        = 3,
         })
     end,
@@ -139,7 +139,7 @@ MenuGroup:AddToggle("KeybindMenuOpen", {
 
 MenuGroup:AddToggle("ShowCustomCursor", {
     Text     = "Custom Cursor",
-    Default  = false,
+    Default  = true,
     Callback = function(Value)
         Library.ShowCustomCursor = Value
     end,
@@ -191,5 +191,5 @@ Library:OnUnload(function()
         GunMod.heartbeatConn:Disconnect()
         GunMod.heartbeatConn = nil
     end
-    print("CONVERGENCE unloaded.")
+    print("ASTRO-CONVERGENCE unloaded.")
 end)
