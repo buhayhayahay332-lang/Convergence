@@ -65,12 +65,6 @@ SilentTab:AddToggle("SilentEnabled", {
     end,
 })
 
-Toggles.SilentEnabled:OnChanged(function()
-    if Toggles.SilentEnabled.Value ~= Silent.ENABLED then
-        Silent.toggle()
-    end
-end)
-
 SilentTab:AddSlider("SilentFOV", {
     Text     = "FOV",
     Default  = Silent.FOV,
@@ -95,12 +89,6 @@ AimbotTab:AddToggle("AimbotEnabled", {
     end,
 })
 
-Toggles.AimbotEnabled:OnChanged(function()
-    if Toggles.AimbotEnabled.Value ~= Aimbot.ENABLED then
-        Aimbot.toggle()
-    end
-end)
-
 AimbotTab:AddDropdown("AimbotKeybindMode", {
     Values   = { "Hold", "Toggle" },
     Default  = Aimbot.KEYBIND_MODE,
@@ -119,9 +107,6 @@ AimbotTab:AddLabel("Aim Keybind")
         Mode         = "Always",  
         Text         = "Aim Key",
         NoUI         = false,
-        Callback     = function(Value)
-            Aimbot.KEYBIND = Value
-        end,
     })
 
 Options.AimbotKeybind:OnChanged(function()
@@ -185,13 +170,6 @@ WeaponBox:AddToggle("InfiniteAmmo", {
     end,
 })
 
-Toggles.InfiniteAmmo:OnChanged(function()
-    if Toggles.InfiniteAmmo.Value ~= GunMod.INFINITE_AMMO then
-        GunMod.toggleInfiniteAmmo()
-    end
-end)
-
-
 local MoveBox = Tabs.Movement:AddLeftGroupbox("Character", "footprints")
 
 MoveBox:AddSlider("WalkSpeed", {
@@ -217,12 +195,6 @@ MoveBox:AddToggle("FlyEnabled", {
     end,
 })
 
-Toggles.FlyEnabled:OnChanged(function()
-    if Toggles.FlyEnabled.Value ~= Movement.FLY_ENABLED then
-        Movement.toggleFly()
-    end
-end)
-
 MoveBox:AddSlider("FlySpeed", {
     Text     = "Fly Speed",
     Default  = Movement.FLY_SPEED,
@@ -246,12 +218,6 @@ MoveBox:AddToggle("NoclipEnabled", {
     end,
 })
 
-Toggles.NoclipEnabled:OnChanged(function()
-    if Toggles.NoclipEnabled.Value ~= Movement.NOCLIP then
-        Movement.toggleNoclip()
-    end
-end)
-
 local TeleportBox = Tabs.Movement:AddRightGroupbox("Teleport", "map-pin")
 
 TeleportBox:AddButton({
@@ -269,9 +235,6 @@ TeleportBox:AddLabel("TP Keybind")
         Mode            = "Always",
         Text            = "TP Key",
         NoUI            = false,
-        Callback        = function(Value)
-            Movement.TP_KEYBIND = Value
-        end,
     })
 
 Options.TpKeybind:OnChanged(function()

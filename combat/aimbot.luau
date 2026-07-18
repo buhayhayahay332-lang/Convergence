@@ -75,18 +75,12 @@ end
 
 local function isKeybindHeld()
     local kb = Aimbot.KEYBIND
-    if not kb then return false end
+    if not kb or typeof(kb) ~= "EnumItem" then return false end
 
-    if kb == Enum.UserInputType.MouseButton1 then
-        return UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
-    elseif kb == Enum.UserInputType.MouseButton2 then
-        return UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2)
-    elseif kb == Enum.UserInputType.MouseButton3 then
-        return UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton3)
-    end
-
-    if typeof(kb) == "EnumItem" and kb.EnumType == Enum.KeyCode then
+    if kb.EnumType == Enum.KeyCode then
         return UserInputService:IsKeyDown(kb)
+    elseif kb.EnumType == Enum.UserInputType then
+        return UserInputService:IsMouseButtonPressed(kb)
     end
 
     return false

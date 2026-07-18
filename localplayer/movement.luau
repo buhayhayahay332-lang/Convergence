@@ -161,7 +161,7 @@ function Movement.startTpKeybind()
     Movement.tpInputConn = UserInputService.InputBegan:Connect(function(input, processed)
         if processed then return end
         local kb = Movement.TP_KEYBIND
-        if not kb then return end
+        if not kb or kb == "None" then return end
         local match = (input.KeyCode == kb) or (input.UserInputType == kb)
         if match then
             Movement.tpToNearestEnemy()
