@@ -108,7 +108,6 @@ end
 
 function Silent.toggle()
     Silent.Config.Enabled = not Silent.Config.Enabled
-    print(Silent.Config.Enabled and "✅ [Silent] ON" or "❌ [Silent] OFF")
 end
 
 function Silent.init()
